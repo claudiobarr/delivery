@@ -4,6 +4,7 @@ import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 
 @Controller('products')
@@ -40,14 +41,14 @@ export class ProductsController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PARTNER)
-  update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
-    return this.productsService.update(id, dto);
+  update(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: UpdateProductDto) {
+    return this.productsService.update(id, dto, user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PARTNER)
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(id);
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.productsService.remove(id, user);
   }
 }

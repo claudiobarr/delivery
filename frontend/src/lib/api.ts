@@ -91,6 +91,31 @@ class ApiClient {
     return this.get<any>('/auth/me');
   }
 
+  // Passkeys (biometria / Face ID)
+  passkeyRegisterOptions() {
+    return this.post<any>('/auth/passkeys/register/options');
+  }
+
+  passkeyRegisterVerify(response: any, deviceName?: string) {
+    return this.post<any>('/auth/passkeys/register/verify', { response, deviceName });
+  }
+
+  passkeyLoginOptions(userId?: string) {
+    return this.post<any>('/auth/passkeys/login/options', { userId });
+  }
+
+  passkeyLoginVerify(response: any) {
+    return this.post<{ user: any }>('/auth/passkeys/login/verify', { response });
+  }
+
+  getPasskeys() {
+    return this.get<any[]>('/auth/passkeys');
+  }
+
+  deletePasskey(id: string) {
+    return this.delete<any>(`/auth/passkeys/${id}`);
+  }
+
   // Products
   getProducts(params?: string) {
     return this.get<{ products: any[]; total: number }>(`/products${params ? `?${params}` : ''}`);

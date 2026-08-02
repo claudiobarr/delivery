@@ -66,8 +66,12 @@ export class UsersService {
   }
 
   async deleteAddress(addressId: string, userId: string) {
-    await this.prisma.address.delete({
+    const address = await this.prisma.address.findFirst({
       where: { id: addressId, userId },
+    });
+    if (!address) throw new NotFoundException('Address not found');
+    await this.prisma.address.delete({
+      where: { id: addressId },
     });
     return { message: 'Address deleted' };
   }

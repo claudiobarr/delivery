@@ -7,19 +7,59 @@ import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { toast } from 'sonner';
-import { MapPin, Plus, Edit2, Trash2 } from 'lucide-react';
+import { MapPin, Plus, Edit2, Trash2, Fingerprint, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [addresses, setAddresses] = useState<any[]>([]);
+  const [passkeys, setPasskeys] = useState<any[]>([]);
+  const [registering, setRegistering] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [form, setForm] = useState({ street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '', label: '' });
 
   useEffect(() => {
-    if (user) api.getAddresses().then(setAddresses);
+    if (user) {
+      api.getAddresses().then(setAddresses);
+      api.getPasskeys().then(setPasskeys).catch(() => {});
+    }
   }, [user]);
+
+  const handleRegisterPasskey = async () => {
+    setRegistering(true);
+    try {
+      const { startRegistration } = await import('@simplewebauthn/browser');
+      const options = await api.passkeyRegisterOptions();
+      const response = await startRegistration(options);
+      const deviceName =
+        (typeof navigator !== 'undefined' ? navigator.platform : '') || 'Meu dispositivo';
+      await api.passkeyRegisterVerify(response, deviceName);
+      toast.success('Biometria cadastrada com sucesso!');
+      setPasskeys(await api.getPasskeys());
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError') {
+        toast.error('Cadastro biométrico cancelado');
+      } else if (err?.name === 'InvalidStateError') {
+        toast.error('Este dispositivo já está cadastrado');
+      } else {
+        toast.error(err.message || 'Erro ao cadastrar biometria');
+      }
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const handleDeletePasskey = async (id: string) => {
+    if (!confirm('Remover este dispositivo?')) return;
+    try {
+      await api.deletePasskey(id);
+      setPasskeys(passkeys.filter((p) => p.id !== id));
+      toast.success('Dispositivo removido');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   const openNewAddress = () => {
     setEditingAddress(null);
@@ -84,6 +124,38 @@ export default function ProfilePage() {
           <div><span className="text-gray-500">Telefone:</span> <span>{user.phone || '-'}</span></div>
           <div><span className="text-gray-500">Tipo:</span> <span>{user.role}</span></div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold flex items-center gap-2"><Fingerprint size={18} /> Biometria e Face ID</h2>
+          <Button size="sm" onClick={handleRegisterPasskey} disabled={registering}>
+            <Plus size={16} className="mr-1" /> {registering ? 'Cadastrando...' : 'Cadastrar'}
+          </Button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Entre sem senha usando sua digital, Face ID ou Windows Hello no login.
+        </p>
+        {passkeys.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum dispositivo cadastrado</p>
+        ) : (
+          <div className="space-y-3">
+            {passkeys.map((pk) => (
+              <div key={pk.id} className="flex items-start justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Smartphone size={20} className="text-primary-500" />
+                  <div>
+                    <p className="font-medium text-sm">{pk.deviceName}</p>
+                    <p className="text-xs text-gray-500">
+                      {pk.lastUsedAt ? `Último uso: ${new Date(pk.lastUsedAt).toLocaleDateString('pt-BR')}` : 'Nunca usado'} · Cadastrado em {new Date(pk.createdAt).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => handleDeletePasskey(pk.id)} className="p-1 hover:bg-red-50 rounded text-red-500"><Trash2 size={16} /></button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border">

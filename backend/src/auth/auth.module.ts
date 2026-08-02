@@ -4,6 +4,8 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { PasskeysController } from './passkeys.controller';
+import { PasskeysService } from './passkeys.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { AppleStrategy } from './strategies/apple.strategy';
@@ -20,8 +22,8 @@ import { AppleStrategy } from './strategies/apple.strategy';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, AppleStrategy],
+  controllers: [AuthController, PasskeysController],
+  providers: [AuthService, PasskeysService, JwtStrategy, GoogleStrategy, AppleStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

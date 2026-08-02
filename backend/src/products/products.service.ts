@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
+import { UserRole } from '@prisma/client';
 import slugify from 'slugify';
 
 @Injectable()
@@ -82,8 +83,11 @@ export class ProductsService {
     });
   }
 
-  async update(id: string, dto: UpdateProductDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateProductDto, user?: any) {
+    const product = await this.findOne(id);
+    if (user?.role === UserRole.PARTNER && product.partnerId !== user.id) {
+      throw new ForbiddenException('Not your product');
+    }
     const data: any = { ...dto };
     if (dto.name && !dto.slug) {
       data.slug = slugify(dto.name, { lower: true, strict: true });
@@ -98,8 +102,11 @@ export class ProductsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, user?: any) {
+    const product = await this.findOne(id);
+    if (user?.role === UserRole.PARTNER && product.partnerId !== user.id) {
+      throw new ForbiddenException('Not your product');
+    }
     await this.prisma.product.delete({ where: { id } });
     return { message: 'Product deleted' };
   }

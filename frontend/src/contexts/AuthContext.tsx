@@ -10,6 +10,7 @@ interface AuthContextType {
   register: (data: { email: string; password: string; name?: string; phone?: string; isPartner?: boolean; storeName?: string; storeDescription?: string; cnpj?: string }) => Promise<void>;
   loginWithGoogle: (token: string) => Promise<void>;
   loginWithApple: (token: string) => Promise<void>;
+  loginWithBiometry: () => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   isPartner: boolean;
@@ -54,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
+  const loginWithBiometry = async () => {
+    const { startAuthentication } = await import('@simplewebauthn/browser');
+    const options = await api.passkeyLoginOptions();
+    const response = await startAuthentication(options);
+    const res = await api.passkeyLoginVerify(response);
+    setUser(res.user);
+  };
+
   const logout = () => {
     api.logout().catch(() => {});
     api.setToken(null);
@@ -69,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         loginWithGoogle,
         loginWithApple,
+        loginWithBiometry,
         logout,
         isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
         isPartner: user?.role === 'PARTNER',

@@ -24,6 +24,8 @@
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/throttler": "^5.1.1",
     "@prisma/client": "^5.8.0",
+    "@simplewebauthn/server": "^13.3.2",
+    "@simplewebauthn/typescript-types": "^8.3.4",
     "@types/cookie-parser": "^1.4.10",
     "@types/multer": "^2.2.0",
     "bcryptjs": "^3.0.3",
